@@ -1,0 +1,6 @@
+cassandra-driver # connecet cassrandra not use pyspark
+# mysql-connector-python
+SQLAlchemy>=1.4
+#python-dotenv
+time_uuid
+uuid
