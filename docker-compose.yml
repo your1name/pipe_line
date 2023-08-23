@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  etl_cassandra:
+    container_name:  etl_cassandra
+    image: cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=my_cluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+    volumes:
+      - cassandra-data:/var/lib/cassandra/data
+    networks:
+      - etl-network
+
+  etl_mysql:
+    container_name:  etl_mysql
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=recruitment
+      - TZ="Asia/Ho_Chi_Minh"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - etl-network
+
+  etl_pyspark:
+    container_name: etl_pyspark
+    build:
+      context: .
+    volumes:
+      - ./:/opt/application
+    depends_on:
+      - etl_cassandra
+      - etl_mysql
+    environment:
+      - CASSANDRA_HOST=cassandra
+      - MYSQL_HOST=mysql
+      - MYSQL_DATABASE=recruitment
+      - MYSQL_ROOT_PASSWORD=123456
+    networks:
+      - etl-network
+
+volumes:
+  cassandra-data:
+  mysql-data:
+
+networks:
+  etl-network:
