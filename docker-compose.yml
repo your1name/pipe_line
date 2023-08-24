@@ -1,53 +1,53 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  etl_cassandra:
-    container_name:  etl_cassandra
-    image: cassandra
+  notebook:
+    image: jupyter/all-spark-notebook
+    container_name: spark-notebook
     ports:
-      - "9042:9042"
+      - 8888:8888
+      - 4040:4040
     environment:
-      - CASSANDRA_CLUSTER_NAME=my_cluster
+      - JUPYTER_TOKEN=etldata
+    restart: unless-stopped
+    working_dir: /usr/app
+    volumes:
+      - .:/usr/app
+    networks:
+      - etl_networks
+
+  lake-cassandra:
+    image: cassandra:latest
+    container_name: cassandra-datalake
+    ports:
+      - 9042:9042
+    environment:
+      - CASSANDRA_CLUSTER_NAME=datalake
       - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
     volumes:
-      - cassandra-data:/var/lib/cassandra/data
+      - cassandra_data:/var/lib/cassandra/data
     networks:
-      - etl-network
+      - etl_networks
 
-  etl_mysql:
-    container_name:  etl_mysql
-    image: mysql
+  ware_mysql:
+    image: mysql:latest
+    container_name: mysql_data_warehouse
     ports:
-      - "3306:3306"
+      - 3306:3306
     environment:
       - MYSQL_ROOT_PASSWORD=123456
-      - MYSQL_DATABASE=recruitment
+      - MYSQL_DATABASE=warehouse
       - TZ="Asia/Ho_Chi_Minh"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     networks:
-      - etl-network
-
-  etl_pyspark:
-    container_name: etl_pyspark
-    build:
-      context: .
-    volumes:
-      - ./:/opt/application
-    depends_on:
-      - etl_cassandra
-      - etl_mysql
-    environment:
-      - CASSANDRA_HOST=cassandra
-      - MYSQL_HOST=mysql
-      - MYSQL_DATABASE=recruitment
-      - MYSQL_ROOT_PASSWORD=123456
-    networks:
-      - etl-network
-
-volumes:
-  cassandra-data:
-  mysql-data:
+      - etl_networks
 
 networks:
-  etl-network:
+  etl_networks:
+    driver: bridge
+    name: etl_networks
+
+volumes:
+  cassandra_data:
+  mysql_data:
